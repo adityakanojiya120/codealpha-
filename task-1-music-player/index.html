@@ -1,1 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Soundwave Player</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
+<body class="bg-black text-white h-screen flex">
+
+<!-- Sidebar -->
+<aside class="w-20 bg-gray-900 flex flex-col items-center py-6 space-y-6">
+  <div class="text-xl font-bold">🎵</div>
+
+  <nav class="flex flex-col gap-6 text-gray-400">
+    <button id="homeBtn" class="hover:text-white">🏠</button>
+    <button id="searchBtn" class="hover:text-white">🔍</button>
+    <button id="libraryBtn" class="hover:text-white">📚</button>
+  </nav>
+
+  <div class="mt-auto text-sm text-gray-500">my music💕</div>
+</aside>
+
+<!-- Main -->
+<main class="flex-1 flex flex-col">
+
+<header class="p-6 border-b border-gray-800">
+  <h1 class="text-2xl font-bold mb-4">Soundwave 🎧</h1>
+
+  <input
+    id="searchInput"
+    type="text"
+    placeholder="Search songs..."
+    class="w-full p-2 rounded bg-gray-900 text-white outline-none"
+  >
+</header>
+
+<section id="trackGrid" class="grid grid-cols-2 md:grid-cols-3 gap-6 p-6 flex-1 overflow-y-auto"></section>
+
+</main>
+
+<script>
+const grid = document.getElementById("trackGrid");
+const searchInput = document.getElementById("searchInput");
+
+const BASE_URL = "https://discoveryprovider.audius.co";
+
+// 🔥 Load Home
+async function loadHome() {
+  grid.innerHTML = "<p class='text-gray-400'>Loading trending songs... 🔥</p>";
+  const results = await searchAudius("top hits");
+  renderTracks(results);
+}
+
+// 🔍 Search
+async function searchAudius(query) {
+  try {
+    const res = await fetch(`${BASE_URL}/v1/tracks/search?query=${query}&limit=8`);
+    const data = await res.json();
+
+    return data.data.map(track => ({
+      title: track.title,
+      artist: track.user.name,
+      cover: track.artwork?.['480x480'] || "https://via.placeholder.com/300",
+      stream: `${BASE_URL}/v1/tracks/${track.id}/stream`
+    }));
+
+  } catch (err) {
+    return [];
+  }
+}
+
+// 🎨 Render
+function renderTracks(list) {
+  grid.innerHTML = "";
+
+  if (list.length === 0) {
+    grid.innerHTML = "<p class='text-gray-400'>No results 😢</p>";
+    return;
+  }
+
+  list.forEach((t) => {
+    const card = document.createElement("div");
+    card.className = "bg-gray-900 p-4 rounded cursor-pointer hover:bg-gray-800";
+
+    card.innerHTML = `
+      <img src="${t.cover}" class="w-full h-32 object-cover rounded mb-2">
+      <h3 class="font-bold">${t.title}</h3>
+      <p class="text-sm text-gray-400">${t.artist}</p>
+
+      <button class="mt-2 bg-pink-600 px-2 py-1 rounded text-sm saveBtn">
+        ❤️ Save
+      </button>
+    `;
+
+    // ▶️ Open player
+    card.onclick = () => {
+      localStorage.setItem("song", JSON.stringify(t));
+      window.location.href = "player.html";
+    };
+
+    // ❤️ Save to library
+    const saveBtn = card.querySelector(".saveBtn");
+
+    saveBtn.onclick = (e) => {
+      e.stopPropagation();
+
+      let library = JSON.parse(localStorage.getItem("library")) || [];
+
+      if (!library.find(song => song.stream === t.stream)) {
+        library.push(t);
+        localStorage.setItem("library", JSON.stringify(library));
+        alert("Saved to Library ❤️");
+      } else {
+        alert("Already in Library 🎵");
+      }
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+// 📚 Load Library
+function loadLibrary() {
+  const library = JSON.parse(localStorage.getItem("library")) || [];
+
+  if (library.length === 0) {
+    grid.innerHTML = "<p class='text-gray-400'>Your library is empty 😢</p>";
+    return;
+  }
+
+  renderTracks(library);
+}
+
+// ⌨️ Search
+let timeout;
+searchInput.addEventListener("input", () => {
+  clearTimeout(timeout);
+  const query = searchInput.value;
+
+  if (query.length < 2) return;
+
+  grid.innerHTML = "<p class='text-gray-400'>Loading... ⏳</p>";
+
+  timeout = setTimeout(async () => {
+    const results = await searchAudius(query);
+    renderTracks(results);
+  }, 400);
+});
+
+// Sidebar
+homeBtn.onclick = loadHome;
+searchBtn.onclick = () => searchInput.focus();
+libraryBtn.onclick = loadLibrary;
+
+// Start
+loadHome();
+</script>
+
+</body>
+</html>
