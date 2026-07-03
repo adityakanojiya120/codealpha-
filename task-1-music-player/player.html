@@ -1,1 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Now Playing</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
+<body class="bg-black text-white flex items-center justify-center h-screen">
+
+<div class="text-center">
+
+  <img id="cover" class="w-64 h-64 object-cover rounded-lg mx-auto mb-6">
+
+  <h2 id="title" class="text-xl font-bold"></h2>
+  <p id="artist" class="text-gray-400 mb-6"></p>
+
+  <audio id="audio" controls class="w-80"></audio>
+
+  <div class="mt-6 space-x-3">
+    <button onclick="goBack()" class="bg-gray-800 px-4 py-2 rounded hover:bg-gray-700">
+      ⬅ Back
+    </button>
+
+    <button onclick="removeFromLibrary()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-500">
+      ❌ Remove
+    </button>
+  </div>
+
+</div>
+
+<script>
+const song = JSON.parse(localStorage.getItem("song"));
+
+const cover = document.getElementById("cover");
+const title = document.getElementById("title");
+const artist = document.getElementById("artist");
+const audio = document.getElementById("audio");
+
+if (song) {
+  cover.src = song.cover;
+  title.innerText = song.title;
+  artist.innerText = song.artist;
+  audio.src = song.stream;
+  audio.play();
+}
+
+// 🔙 Back
+function goBack() {
+  window.location.href = "index.html";
+}
+
+// ❌ Remove from library
+function removeFromLibrary() {
+  let library = JSON.parse(localStorage.getItem("library")) || [];
+
+  library = library.filter(item => item.stream !== song.stream);
+
+  localStorage.setItem("library", JSON.stringify(library));
+
+  alert("Removed from Library ❌");
+}
+</script>
+
+</body>
+</html>
