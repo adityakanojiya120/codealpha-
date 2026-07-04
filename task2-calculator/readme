@@ -1,1 +1,57 @@
+# 🧮 Calculator with Theme Toggle
 
+A modern, responsive calculator built using **HTML, CSS, and JavaScript**, featuring a clean neumorphic UI and a dark/light theme toggle.
+
+---
+
+## ✨ Features
+
+- 🔢 Basic arithmetic operations (+, −, ×, ÷)
+- 🖥️ Interactive display screen
+- 🖱️ Clickable buttons
+- ⌨️ Full keyboard support
+- 🌗 Dark / Light theme toggle
+- 💾 Theme preference saved using `localStorage`
+- 🎨 Neumorphism-inspired modern UI
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `0-9` | Enter numbers |
+| `+ - * /` | Operators |
+| `Enter` | Calculate result |
+| `Backspace` | Delete last digit |
+| `C` | Clear display |
+| `.` | Decimal input |
+
+
+---
+
+## 🌗 Theme Toggle
+
+- Click the 🌙 button to switch between **Light** and **Dark** mode
+- Your selected theme is automatically saved and restored on reload
+
+---
+
+## ⚙️ Technologies Used
+
+- HTML5
+- CSS3 (Custom Properties / Variables)
+- Vanilla JavaScript
+
+---
+
+## demo
+
+http://127.0.0.1:5500/index.html
+
+
+---
+
+## 🧑‍💻 Author
+
+aditya kanojiya
