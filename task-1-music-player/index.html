@@ -22,20 +22,23 @@
 </aside>
 
 <!-- Main -->
-<main class="flex-1 flex flex-col">
+<main class="flex-1 flex flex-col items-center">
 
-<header class="p-6 border-b border-gray-800">
-  <h1 class="text-2xl font-bold mb-4">Soundwave 🎧</h1>
+<header class="w-full max-w-6xl p-6 border-b border-gray-800">
+  <h1 class="text-2xl font-bold mb-4 text-center">Soundwave 🎧</h1>
 
   <input
     id="searchInput"
     type="text"
     placeholder="Search songs..."
-    class="w-full p-2 rounded bg-gray-900 text-white outline-none"
+    class="w-full p-3 rounded bg-gray-900 text-white outline-none focus:ring-2 focus:ring-pink-500"
   >
 </header>
 
-<section id="trackGrid" class="grid grid-cols-2 md:grid-cols-3 gap-6 p-6 flex-1 overflow-y-auto"></section>
+<section 
+  id="trackGrid" 
+  class="w-full max-w-6xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6 overflow-y-auto">
+</section>
 
 </main>
 
@@ -45,23 +48,83 @@ const searchInput = document.getElementById("searchInput");
 
 const BASE_URL = "https://discoveryprovider.audius.co";
 
-// 🔥 Load Home
-async function loadHome() {
-  grid.innerHTML = "<p class='text-gray-400'>Loading trending songs... 🔥</p>";
-  const results = await searchAudius("top hits");
-  renderTracks(results);
+
+// ✅ IMAGE FIX
+function getValidImage(track) {
+  return track.artwork?.['1000x1000'] ||
+         track.artwork?.['480x480'] ||
+         track.artwork?.['150x150'] ||
+         "https://picsum.photos/300?random=" + Math.floor(Math.random()*1000);
 }
 
-// 🔍 Search
+
+// 🔥 HOME (Bollywood + Recently Played on top)
+async function loadHome() {
+  grid.innerHTML = "<p class='text-gray-400'>Loading Bollywood songs... 🎬</p>";
+
+  try {
+    const queries = [
+      "bollywood",
+      "hindi song",
+      "arijit singh",
+      "romantic hindi",
+      "punjabi song"
+    ];
+
+    // FAST parallel fetch
+    const requests = queries.map(q =>
+      fetch(`${BASE_URL}/v1/tracks/search?query=${q}&limit=5`)
+        .then(res => res.json())
+    );
+
+    const responses = await Promise.all(requests);
+
+    let allTracks = [];
+
+    responses.forEach(data => {
+      const tracks = data.data.map(track => ({
+        title: track.title,
+        artist: track.user.name,
+        cover: getValidImage(track),
+        stream: `${BASE_URL}/v1/tracks/${track.id}/stream`
+      }));
+
+      allTracks = [...allTracks, ...tracks];
+    });
+
+    // Shuffle normal tracks
+    allTracks.sort(() => Math.random() - 0.5);
+
+    // ✅ RECENTLY PLAYED FIRST
+    const recent = JSON.parse(localStorage.getItem("recent")) || [];
+
+    let finalList = [...recent];
+
+    // add rest without duplicates
+    allTracks.forEach(track => {
+      if (!finalList.find(r => r.stream === track.stream)) {
+        finalList.push(track);
+      }
+    });
+
+    renderTracks(finalList);
+
+  } catch (err) {
+    grid.innerHTML = "<p class='text-red-400'>Failed to load 😢</p>";
+  }
+}
+
+
+// 🔍 SEARCH
 async function searchAudius(query) {
   try {
-    const res = await fetch(`${BASE_URL}/v1/tracks/search?query=${query}&limit=8`);
+    const res = await fetch(`${BASE_URL}/v1/tracks/search?query=${query}&limit=12`);
     const data = await res.json();
 
     return data.data.map(track => ({
       title: track.title,
       artist: track.user.name,
-      cover: track.artwork?.['480x480'] || "https://via.placeholder.com/300",
+      cover: getValidImage(track),
       stream: `${BASE_URL}/v1/tracks/${track.id}/stream`
     }));
 
@@ -70,7 +133,8 @@ async function searchAudius(query) {
   }
 }
 
-// 🎨 Render
+
+// 🎨 RENDER
 function renderTracks(list) {
   grid.innerHTML = "";
 
@@ -81,25 +145,38 @@ function renderTracks(list) {
 
   list.forEach((t) => {
     const card = document.createElement("div");
-    card.className = "bg-gray-900 p-4 rounded cursor-pointer hover:bg-gray-800";
+    card.className = "bg-gray-900 p-4 rounded cursor-pointer hover:bg-gray-800 hover:scale-105 transition shadow-lg";
 
     card.innerHTML = `
-      <img src="${t.cover}" class="w-full h-32 object-cover rounded mb-2">
-      <h3 class="font-bold">${t.title}</h3>
-      <p class="text-sm text-gray-400">${t.artist}</p>
+      <img src="${t.cover}" 
+           onerror="this.src='https://picsum.photos/300?random=1'"
+           class="w-full h-36 object-cover rounded mb-2">
 
-      <button class="mt-2 bg-pink-600 px-2 py-1 rounded text-sm saveBtn">
+      <h3 class="font-bold truncate">${t.title}</h3>
+      <p class="text-sm text-gray-400 truncate">${t.artist}</p>
+
+      <button class="mt-3 bg-pink-600 px-3 py-1 rounded text-sm saveBtn hover:bg-pink-500">
         ❤️ Save
       </button>
     `;
 
-    // ▶️ Open player
+    // ▶️ PLAY + SAVE RECENT
     card.onclick = () => {
       localStorage.setItem("song", JSON.stringify(t));
+
+      // 🔥 RECENT LOGIC
+      let recent = JSON.parse(localStorage.getItem("recent")) || [];
+
+      recent = recent.filter(song => song.stream !== t.stream);
+      recent.unshift(t);
+      recent = recent.slice(0, 10);
+
+      localStorage.setItem("recent", JSON.stringify(recent));
+
       window.location.href = "player.html";
     };
 
-    // ❤️ Save to library
+    // ❤️ SAVE LIBRARY
     const saveBtn = card.querySelector(".saveBtn");
 
     saveBtn.onclick = (e) => {
@@ -110,9 +187,9 @@ function renderTracks(list) {
       if (!library.find(song => song.stream === t.stream)) {
         library.push(t);
         localStorage.setItem("library", JSON.stringify(library));
-        alert("Saved to Library ❤️");
+        alert("Saved ❤️");
       } else {
-        alert("Already in Library 🎵");
+        alert("Already saved 🎵");
       }
     };
 
@@ -120,19 +197,21 @@ function renderTracks(list) {
   });
 }
 
-// 📚 Load Library
+
+// 📚 LIBRARY
 function loadLibrary() {
   const library = JSON.parse(localStorage.getItem("library")) || [];
 
   if (library.length === 0) {
-    grid.innerHTML = "<p class='text-gray-400'>Your library is empty 😢</p>";
+    grid.innerHTML = "<p class='text-gray-400'>Empty library 😢</p>";
     return;
   }
 
   renderTracks(library);
 }
 
-// ⌨️ Search
+
+// ⌨️ SEARCH INPUT
 let timeout;
 searchInput.addEventListener("input", () => {
   clearTimeout(timeout);
@@ -148,10 +227,12 @@ searchInput.addEventListener("input", () => {
   }, 400);
 });
 
+
 // Sidebar
 homeBtn.onclick = loadHome;
 searchBtn.onclick = () => searchInput.focus();
 libraryBtn.onclick = loadLibrary;
+
 
 // Start
 loadHome();
