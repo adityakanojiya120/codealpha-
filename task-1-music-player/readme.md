@@ -22,26 +22,6 @@ task-1-music-player/
 
 ---
 
-## 📁 Task 2 - (Coming Soon)
-
-This section will include the second project of the internship.
-
----
-
-## 🚀 How to Run
-
-1. Clone the repository:
-git clone https://github.com/adityakanojiya120/code-alpha.git
-
-2. Open the project in VS Code
-
-3. Go to:
-task-1-music-player/index.html
-
-4. Open in browser or use Live Server
-
----
-
 ## 🌐 Live Demo
 
 http://127.0.0.1:5500/index.html
